@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture Image for Processing</title>
+</head>
+<body>
+    <h1>Capture Image for Processing</h1>
+    <video id="video" width="320" height="240" autoplay></video>
+    <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+    <button id="captureButton">Capture and Upload Image</button>
+    <p>{{ processed_message }}</p>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('captureButton');
+
+        // Access the camera and stream it to the video element
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error('Error accessing camera:', error);
+            });
+
+        // Capture an image when the button is clicked
+        captureButton.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the canvas to a data URL (base64 encoded image)
+            canvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'captured_image.png');
+
+                // Send the image to the server
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(result => {
+                    console.log('Image uploaded and processed:', result);
+                    window.location.reload(); // Reload to update processed message
+                })
+                .catch(error => {
+                    console.error('Error uploading image:', error);
+                });
+            }, 'image/png');
+        });
+    </script>
+</body>
+</html>
